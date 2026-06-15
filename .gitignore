@@ -15,3 +15,8 @@ terraform/.terraform.lock.hcl
 *.cert
 kubeconfig*
 secrets/
+terraform/quick-deploy.tf
+terraform/environments/minimal/terraform.tfstate
+terraform/tfplan
+terraform/quick/
+docs/screenshots/

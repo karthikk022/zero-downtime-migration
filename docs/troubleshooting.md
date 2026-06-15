@@ -139,9 +139,6 @@ aws rds describe-events \
 ## Logs Collection
 
 ```bash
-# Collect all logs
-./auto-healing/scripts/collect-logs.sh
-
 # View Loki logs
 kubectl port-forward svc/loki 3100:3100 -n monitoring
 curl http://localhost:3100/loki/api/v1/query?query={app="frontend"}
