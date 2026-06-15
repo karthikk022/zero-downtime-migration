@@ -1,0 +1,67 @@
+{
+  "title": "Deployment Dashboard",
+  "version": 1,
+  "panels": [
+    {
+      "title": "Active Rollouts",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "count(argo_rollouts_current_step{namespace=\"production\"})",
+          "legendFormat": "Active Rollouts"
+        }
+      ]
+    },
+    {
+      "title": "Canary Traffic Split",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "sum(nginx_ingress_controller_requests{namespace=\"production\"}) by (ingress)",
+          "legendFormat": "{{ ingress }}"
+        }
+      ],
+      "yaxes": [{ "format": "rps", "label": "Requests/sec" }]
+    },
+    {
+      "title": "Deployment Replicas by Service",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "kube_deployment_status_replicas{namespace=\"production\"}",
+          "legendFormat": "{{ deployment }}"
+        }
+      ]
+    },
+    {
+      "title": "Rollback Events (Last 24h)",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(increase(kube_deployment_status_replicas_unavailable{namespace=\"production\"}[24h]))",
+          "legendFormat": "Unavailable Replicas"
+        }
+      ]
+    },
+    {
+      "title": "Blue-Green Target Group Weights",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "aws_alb_target_group_healthy_count{target_group=~\"blue|green\"}",
+          "legendFormat": "{{ target_group }}"
+        }
+      ]
+    },
+    {
+      "title": "Deployment Duration",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "time() - kube_deployment_metadata_generation{namespace=\"production\"}",
+          "legendFormat": "Duration (seconds)"
+        }
+      ]
+    }
+  ]
+}
