@@ -1,6 +1,6 @@
 # Zero-Downtime AWS Migration Simulator
 
-[![CI/CD](https://github.com/YOUR_USER/zero-downtime-migration/actions/workflows/deploy.yml/badge.svg)](https://github.com/YOUR_USER/zero-downtime-migration/actions)
+[![CI/CD](https://github.com/karthikk022/zero-downtime-migration/actions/workflows/deploy.yml/badge.svg)](https://github.com/karthikk022/zero-downtime-migration/actions)
 ![Terraform](https://img.shields.io/badge/Terraform-1.5+-844FBA?logo=terraform)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-1.28+-326CE5?logo=kubernetes)
 ![EKS](https://img.shields.io/badge/AWS-EKS-FF9900?logo=amazon-aws)
