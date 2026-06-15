@@ -42,7 +42,7 @@ jobs:
         working-directory: microservices/${{ matrix.service }}
 
       - name: Run tests
-        run: npm test 2>/dev/null || true
+        run: npm test
         working-directory: microservices/${{ matrix.service }}
 
       - name: Build Docker image

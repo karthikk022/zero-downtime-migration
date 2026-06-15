@@ -77,4 +77,8 @@ app.get("/health", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => console.log(`Product service running on port ${PORT}`));
+if (require.main === module) {
+  app.listen(PORT, () => console.log(`Product service running on port ${PORT}`));
+}
+
+module.exports = app;
