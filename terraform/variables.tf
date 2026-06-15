@@ -63,3 +63,15 @@ variable "db_name" {
   type        = string
   default     = "ecommerce"
 }
+
+variable "single_nat" {
+  description = "Use single NAT gateway (cheaper)"
+  type        = bool
+  default     = false
+}
+
+variable "multi_az" {
+  description = "Use Multi-AZ RDS"
+  type        = bool
+  default     = true
+}

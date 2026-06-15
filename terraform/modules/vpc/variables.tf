@@ -13,3 +13,8 @@ variable "azs" {
 variable "vpc_cidr" {
   type = string
 }
+
+variable "single_nat" {
+  type = bool
+  default = false
+}

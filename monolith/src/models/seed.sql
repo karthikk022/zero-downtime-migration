@@ -18,5 +18,5 @@ INSERT INTO products (name, slug, description, price, stock, category_id) VALUES
   ('Smart Watch', 'smart-watch', 'Fitness tracker with heart rate monitor and GPS', 199.99, 90, 1);
 
 INSERT INTO users (username, email, password_hash, first_name, last_name) VALUES
-  ('demo_user', 'demo@example.com', '$2b$10$8K1p/a0dL1LXMIgoEDFrwOfMQkfAjkMBcGmOxl7VbF3GzOyG8VfGm', 'Demo', 'User'),
-  ('admin', 'admin@example.com', '$2b$10$8K1p/a0dL1LXMIgoEDFrwOfMQkfAjkMBcGmOxl7VbF3GzOyG8VfGm', 'Admin', 'User');
+  ('demo_user', 'demo@example.com', '$2b$12$LJ3m4ys3Lk0TSwHnbfOMiOXPm1Ql5qLqFdYEMqJ0q3pZn3q3pZn3q', 'Demo', 'User'),
+  ('admin', 'admin@example.com', '$2b$12$LJ3m4ys3Lk0TSwHnbfOMiOXPm1Ql5qLqFdYEMqJ0q3pZn3q3pZn3q', 'Admin', 'User');

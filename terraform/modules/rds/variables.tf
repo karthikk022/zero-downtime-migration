@@ -37,3 +37,8 @@ variable "allowed_security_group_id" {
   type = string
   default = ""
 }
+
+variable "multi_az" {
+  type = bool
+  default = true
+}

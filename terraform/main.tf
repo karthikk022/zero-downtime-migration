@@ -44,6 +44,7 @@ module "vpc" {
   name_prefix = local.name_prefix
   azs         = local.azs
   vpc_cidr    = var.vpc_cidr
+  single_nat  = var.single_nat
 }
 
 module "iam" {
@@ -62,6 +63,7 @@ module "rds" {
   db_instance_class = var.db_instance_class
   db_username      = var.db_username
   db_password      = var.db_password
+  multi_az         = var.multi_az
 }
 
 module "eks" {

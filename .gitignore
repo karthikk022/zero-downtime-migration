@@ -1,0 +1,17 @@
+node_modules/
+.env
+.env.*
+logs/
+*.log
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/*.tfplan
+terraform/.terraform.lock.hcl
+*.tfvars.enc
+**/.DS_Store
+*.pem
+*.key
+*.cert
+kubeconfig*
+secrets/
