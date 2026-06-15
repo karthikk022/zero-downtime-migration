@@ -77,16 +77,16 @@ resource "aws_eks_node_group" "main" {
   }
 
   labels = {
-    "role"          = "worker"
-    "environment"   = var.environment
+    "role"        = "worker"
+    "environment" = var.environment
   }
 
   tags = {
-    Name                                               = "${var.name_prefix}-node-group"
-    Environment                                        = var.environment
-    "kubernetes.io/cluster/${var.name_prefix}"          = "owned"
-    "k8s.io/cluster-autoscaler/${var.name_prefix}"      = "owned"
-    "k8s.io/cluster-autoscaler/enabled"                 = "true"
+    Name                                           = "${var.name_prefix}-node-group"
+    Environment                                    = var.environment
+    "kubernetes.io/cluster/${var.name_prefix}"     = "owned"
+    "k8s.io/cluster-autoscaler/${var.name_prefix}" = "owned"
+    "k8s.io/cluster-autoscaler/enabled"            = "true"
   }
 }
 

@@ -1,0 +1,1 @@
+path = "minimal/terraform.tfstate"

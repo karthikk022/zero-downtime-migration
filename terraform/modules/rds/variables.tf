@@ -19,26 +19,26 @@ variable "db_instance_class" {
 }
 
 variable "db_username" {
-  type = string
+  type      = string
   sensitive = true
 }
 
 variable "db_password" {
-  type = string
+  type      = string
   sensitive = true
 }
 
 variable "db_name" {
-  type = string
+  type    = string
   default = "ecommerce"
 }
 
 variable "allowed_security_group_id" {
-  type = string
+  type    = string
   default = ""
 }
 
 variable "multi_az" {
-  type = bool
+  type    = bool
   default = true
 }

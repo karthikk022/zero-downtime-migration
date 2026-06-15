@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const { AppError } = require("./errorHandler");
 
-const JWT_SECRET = process.env.JWT_SECRET || "monolith-jwt-secret-change-in-production";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;

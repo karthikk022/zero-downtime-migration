@@ -22,7 +22,7 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-const JWT_SECRET = process.env.JWT_SECRET || "microservice-jwt-secret";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;

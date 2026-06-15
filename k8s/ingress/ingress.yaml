@@ -14,7 +14,7 @@ metadata:
     alb.ingress.kubernetes.io/load-balancer-attributes: deletion_protection.enabled=true
 spec:
   rules:
-    - host: app.zero-downtime.example.com
+    - host: ${INGRESS_HOST}
       http:
         paths:
           - path: /

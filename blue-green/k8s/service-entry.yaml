@@ -37,7 +37,7 @@ metadata:
       }
 spec:
   rules:
-    - host: app.zero-downtime.example.com
+    - host: ${INGRESS_HOST}
       http:
         paths:
           - path: /*

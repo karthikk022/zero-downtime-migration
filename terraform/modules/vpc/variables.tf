@@ -15,6 +15,6 @@ variable "vpc_cidr" {
 }
 
 variable "single_nat" {
-  type = bool
+  type    = bool
   default = false
 }

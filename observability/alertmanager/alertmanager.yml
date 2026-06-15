@@ -1,6 +1,6 @@
 global:
   resolve_timeout: 5m
-  slack_api_url: "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
+  slack_api_url: "${SLACK_WEBHOOK_URL}"
   pagerduty_url: "https://events.pagerduty.com/v2/enqueue"
 
 route:
@@ -39,7 +39,7 @@ receivers:
         send_resolved: true
     pagerduty_configs:
       - severity: critical
-        routing_key: "YOUR_PAGERDUTY_KEY"
+        routing_key: "${PAGERDUTY_ROUTING_KEY}"
 
   - name: "warning"
     slack_configs:

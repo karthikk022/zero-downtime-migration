@@ -6,7 +6,7 @@ const Joi = require("joi");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const JWT_SECRET = process.env.JWT_SECRET || "microservice-jwt-secret";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 app.use(express.json());
 

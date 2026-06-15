@@ -14,7 +14,7 @@ services:
       DB_USER: ecommerce
       DB_PASSWORD: ecommerce_pass
       DB_NAME: ecommerce
-      JWT_SECRET: monolith-jwt-secret-change-in-production
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
     depends_on:
       mysql:
         condition: service_healthy

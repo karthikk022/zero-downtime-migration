@@ -19,7 +19,7 @@ output "node_group_info" {
 }
 
 output "database_endpoint" {
-  value = module.rds.endpoint
+  value     = module.rds.endpoint
   sensitive = true
 }
 
