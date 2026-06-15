@@ -1,0 +1,73 @@
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: network-latency-engine
+  namespace: chaos
+spec:
+  engineState: "active"
+  appinfo:
+    appns: "production"
+    applabel: "app=order-service"
+    appkind: "deployment"
+  chaosServiceAccount: litmus-admin
+  experiments:
+    - name: pod-network-latency
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "60"
+            - name: NETWORK_LATENCY
+              value: "2000"
+            - name: JITTER
+              value: "500"
+            - name: TARGET_PODS
+              value: "1"
+        probe:
+          - name: check-order-api-latency
+            type: httpProbe
+            httpProbe/inputs:
+              url: http://order-service.production:3003/health
+              method:
+                get:
+                  criteria: "=="
+                  responseCode: "200"
+            mode: Continuous
+            runProperties:
+              probeTimeout: 5s
+              interval: 5s
+---
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: network-loss-engine
+  namespace: chaos
+spec:
+  engineState: "active"
+  appinfo:
+    appns: "production"
+    applabel: "app=api-gateway"
+    appkind: "deployment"
+  chaosServiceAccount: litmus-admin
+  experiments:
+    - name: pod-network-loss
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "30"
+            - name: NETWORK_PACKET_LOSS_PERCENTAGE
+              value: "50"
+        probe:
+          - name: check-gateway-availability
+            type: httpProbe
+            httpProbe/inputs:
+              url: http://api-gateway.production:8080/health
+              method:
+                get:
+                  criteria: "=="
+                  responseCode: "200"
+            mode: Continuous
+            runProperties:
+              probeTimeout: 5s
+              interval: 5s

@@ -1,0 +1,9 @@
+aws_region           = "us-east-1"
+environment          = "prod"
+vpc_cidr             = "10.0.0.0/16"
+db_instance_class    = "db.r6g.large"
+db_username          = "admin"
+eks_instance_types   = ["t3.large"]
+eks_desired_size     = 5
+eks_min_size         = 3
+eks_max_size         = 20

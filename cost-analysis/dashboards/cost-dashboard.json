@@ -1,0 +1,99 @@
+{
+  "title": "Cost Optimization Dashboard",
+  "version": 1,
+  "panels": [
+    {
+      "title": "Monthly Cost Comparison",
+      "type": "bargauge",
+      "targets": [
+        {
+          "expr": "aws_cost_legacy_monolith_total",
+          "legendFormat": "Legacy EC2 Monolith"
+        },
+        {
+          "expr": "aws_cost_eks_microservices_total",
+          "legendFormat": "EKS Microservices"
+        }
+      ]
+    },
+    {
+      "title": "Savings Over Time",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "aws_cost_savings_monthly",
+          "legendFormat": "Monthly Savings"
+        }
+      ]
+    },
+    {
+      "title": "Cost by Service (EKS)",
+      "type": "piechart",
+      "targets": [
+        {
+          "expr": "aws_cost_eks_by_service",
+          "legendFormat": "{{ service }}"
+        }
+      ]
+    },
+    {
+      "title": "Compute Cost Comparison",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "aws_cost_legacy_compute",
+          "legendFormat": "Legacy Compute"
+        },
+        {
+          "expr": "aws_cost_eks_compute",
+          "legendFormat": "EKS Compute"
+        }
+      ]
+    },
+    {
+      "title": "Resource Utilization",
+      "type": "gauge",
+      "targets": [
+        {
+          "expr": "avg(kube_node_status_capacity_cpu_cores) / avg(kube_node_status_allocatable_cpu_cores) * 100",
+          "legendFormat": "CPU Util"
+        },
+        {
+          "expr": "avg(container_memory_working_set_bytes) / avg(kube_node_status_allocatable_memory_bytes) * 100",
+          "legendFormat": "Memory Util"
+        }
+      ]
+    },
+    {
+      "title": "Efficiency Score",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "(\n  sum(rate(container_cpu_usage_seconds_total[5m])) / \n  sum(kube_node_status_allocatable_cpu_cores)\n) * 100",
+          "legendFormat": "Efficiency %"
+        }
+      ]
+    },
+    {
+      "title": "Cost Per Request",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "aws_cost_total / sum(rate(http_requests_total[1h]))",
+          "legendFormat": "$/request"
+        }
+      ]
+    },
+    {
+      "title": "Projected Annual Savings",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "aws_cost_legacy_monthly_total - aws_cost_eks_monthly_total * 12",
+          "legendFormat": "Annual Savings"
+        }
+      ]
+    }
+  ],
+  "time": { "from": "now-30d", "to": "now" }
+}

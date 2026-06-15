@@ -1,0 +1,80 @@
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: pod-kill-engine
+  namespace: chaos
+spec:
+  engineState: "active"
+  appinfo:
+    appns: "production"
+    applabel: "app=frontend"
+    appkind: "deployment"
+  chaosServiceAccount: litmus-admin
+  experiments:
+    - name: pod-kill
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "60"
+            - name: CHAOS_INTERVAL
+              value: "10"
+            - name: FORCE
+              value: "true"
+            - name: TARGET_PODS
+              value: "1"
+            - name: PODS_AFFECTED_PERC
+              value: "33"
+        probe:
+          - name: check-frontend-availability
+            type: httpProbe
+            httpProbe/inputs:
+              url: http://frontend.production/health
+              method:
+                get:
+                  criteria: ==
+                  responseCode: "200"
+            mode: Continuous
+            runProperties:
+              probeTimeout: 5s
+              interval: 5s
+              retry: 1
+---
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: pod-kill-all-services
+  namespace: chaos
+spec:
+  engineState: "active"
+  appinfo:
+    appns: "production"
+    applabel: "app in (frontend, api-gateway, user-service, product-service, order-service)"
+    appkind: "deployment"
+  chaosServiceAccount: litmus-admin
+  experiments:
+    - name: pod-kill
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "120"
+            - name: CHAOS_INTERVAL
+              value: "15"
+            - name: FORCE
+              value: "true"
+            - name: PODS_AFFECTED_PERC
+              value: "50"
+        probe:
+          - name: check-api-availability
+            type: httpProbe
+            httpProbe/inputs:
+              url: http://api-gateway.production:8080/health
+              method:
+                get:
+                  criteria: ==
+                  responseCode: "200"
+            mode: Continuous
+            runProperties:
+              probeTimeout: 5s
+              interval: 5s

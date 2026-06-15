@@ -1,0 +1,91 @@
+{
+  "title": "Application Dashboard",
+  "version": 1,
+  "panels": [
+    {
+      "title": "HTTP Request Rate",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{namespace=\"production\"}[5m])) by (service)",
+          "legendFormat": "{{ service }}"
+        }
+      ],
+      "yaxes": [{ "format": "rps", "label": "Requests/sec" }]
+    },
+    {
+      "title": "Error Rate",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{namespace=\"production\", status=~\"5..\"}[5m])) / sum(rate(http_requests_total{namespace=\"production\"}[5m])) * 100",
+          "legendFormat": "Error %"
+        }
+      ],
+      "yaxes": [{ "format": "percent", "label": "Error Rate" }]
+    },
+    {
+      "title": "P95 Latency",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{namespace=\"production\"}[5m])) by (le, service))",
+          "legendFormat": "{{ service }}"
+        }
+      ],
+      "yaxes": [{ "format": "s", "label": "Latency" }]
+    },
+    {
+      "title": "Active Users",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(http_active_sessions{namespace=\"production\"})"
+        }
+      ]
+    },
+    {
+      "title": "CPU Usage by Service",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"production\"}[5m])) by (pod)",
+          "legendFormat": "{{ pod }}"
+        }
+      ],
+      "yaxes": [{ "format": "percentunit", "label": "CPU" }]
+    },
+    {
+      "title": "Memory Usage by Service",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "sum(container_memory_working_set_bytes{namespace=\"production\"}) by (pod)",
+          "legendFormat": "{{ pod }}"
+        }
+      ],
+      "yaxes": [{ "format": "bytes", "label": "Memory" }]
+    },
+    {
+      "title": "Pod Restarts",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(kube_pod_container_status_restarts_total{namespace=\"production\"}) by (pod)",
+          "legendFormat": "{{ pod }}"
+        }
+      ]
+    },
+    {
+      "title": "Database Connections",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "mysql_global_status_threads_connected",
+          "legendFormat": "Connections"
+        }
+      ]
+    }
+  ],
+  "time": { "from": "now-6h", "to": "now" }
+}

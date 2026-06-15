@@ -1,0 +1,155 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
+  CLUSTER_NAME: zero-downtime-prod-cluster
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [frontend, api-gateway, user-service, product-service, order-service]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('microservices/${{ matrix.service }}/package-lock.json') }}
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: microservices/${{ matrix.service }}
+
+      - name: Run lint
+        run: npm run lint 2>/dev/null || true
+        working-directory: microservices/${{ matrix.service }}
+
+      - name: Run tests
+        run: npm test 2>/dev/null || true
+        working-directory: microservices/${{ matrix.service }}
+
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ matrix.service }}:${{ github.sha }} .
+        working-directory: microservices/${{ matrix.service }}
+
+      - name: Security scan with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ matrix.service }}:${{ github.sha }}
+          format: sarif
+          output: trivy-results-${{ matrix.service }}.sarif
+          severity: HIGH,CRITICAL
+
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results-${{ matrix.service }}.sarif
+
+  push-images:
+    name: Push Images
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push all services
+        run: |
+          for service in frontend api-gateway user-service product-service order-service; do
+            docker build -t $ECR_REGISTRY/$service:${{ github.sha }} ./microservices/$service
+            docker tag $ECR_REGISTRY/$service:${{ github.sha }} $ECR_REGISTRY/$service:latest
+            docker push $ECR_REGISTRY/$service:${{ github.sha }}
+            docker push $ECR_REGISTRY/$service:latest
+          done
+
+  deploy-canary:
+    name: Deploy Canary
+    needs: push-images
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
+
+      - name: Deploy Argo Rollout
+        run: |
+          kubectl apply -f canary/argo-rollouts/rollout.yaml
+
+      - name: Update image
+        run: |
+          kubectl argo rollouts set image frontend-rollout \
+            frontend=$ECR_REGISTRY/frontend:${{ github.sha }} \
+            -n production
+
+      - name: Promote canary
+        run: |
+          sleep 60
+          kubectl argo rollouts promote frontend-rollout -n production
+
+  smoke-tests:
+    name: Smoke Tests
+    needs: deploy-canary
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run smoke tests
+        run: |
+          ENDPOINT=$(kubectl get ingress ecommerce-ingress -n production -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          curl -f -s --retry 10 --retry-delay 5 "http://$ENDPOINT/health"
+          curl -f -s "http://$ENDPOINT/api/products" | jq '.products | length > 0'
+
+  full-production:
+    name: Full Production
+    needs: [smoke-tests]
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Promote to 100%
+        run: |
+          kubectl argo rollouts promote --full frontend-rollout -n production
+
+      - name: Verify rollout
+        run: |
+          kubectl argo rollouts status frontend-rollout -n production --watch

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zero-Downtime E-Commerce</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+  <nav class="bg-white shadow-lg">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="flex justify-between h-16">
+        <div class="flex items-center">
+          <h1 class="text-xl font-bold text-gray-800">Zero-Downtime Shop</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+          <a href="#" id="cartLink" class="text-gray-600 hover:text-gray-800">Cart (<span id="cartCount">0</span>)</a>
+          <a href="#" id="loginBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Login</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-7xl mx-auto px-4 py-8">
+    <div id="products" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
+  </main>
+
+  <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg w-96">
+      <h2 class="text-2xl font-bold mb-4">Login</h2>
+      <input id="loginEmail" type="email" placeholder="Email" class="w-full p-2 border rounded mb-3">
+      <input id="loginPassword" type="password" placeholder="Password" class="w-full p-2 border rounded mb-3">
+      <button id="loginSubmit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Login</button>
+      <p id="loginError" class="text-red-500 mt-2 hidden"></p>
+    </div>
+  </div>
+
+  <script>
+    let token = localStorage.getItem("token");
+    const API = window.location.origin;
+
+    async function fetchProducts() {
+      const res = await fetch(`${API}/api/products`);
+      const data = await res.json();
+      const container = document.getElementById("products");
+      container.innerHTML = data.products.map(p => `
+        <div class="bg-white rounded-lg shadow p-4">
+          <h3 class="font-semibold text-lg">${p.name}</h3>
+          <p class="text-gray-600 text-sm">${p.description || ""}</p>
+          <p class="text-xl font-bold mt-2">$${parseFloat(p.price).toFixed(2)}</p>
+          <p class="text-sm text-gray-500">Stock: ${p.stock}</p>
+          <button onclick="addToCart(${p.id})" class="mt-3 w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">Add to Cart</button>
+        </div>
+      `).join("");
+    }
+
+    async function addToCart(productId) {
+      if (!token) { alert("Please login first"); return; }
+      await fetch(`${API}/api/cart/add`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ productId, quantity: 1 })
+      });
+      updateCartCount();
+    }
+
+    async function updateCartCount() {
+      if (!token) return;
+      const res = await fetch(`${API}/api/cart`, { headers: { "Authorization": `Bearer ${token}` } });
+      const data = await res.json();
+      document.getElementById("cartCount").textContent = data.items.length;
+    }
+
+    document.getElementById("loginBtn").onclick = () => document.getElementById("loginModal").classList.remove("hidden");
+    document.getElementById("loginModal").onclick = (e) => { if (e.target === e.currentTarget) e.target.classList.add("hidden"); };
+
+    document.getElementById("loginSubmit").onclick = async () => {
+      const email = document.getElementById("loginEmail").value;
+      const password = document.getElementById("loginPassword").value;
+      const res = await fetch(`${API}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (data.token) {
+        token = data.token;
+        localStorage.setItem("token", token);
+        document.getElementById("loginModal").classList.add("hidden");
+        updateCartCount();
+      } else {
+        document.getElementById("loginError").textContent = data.error;
+        document.getElementById("loginError").classList.remove("hidden");
+      }
+    };
+
+    fetchProducts();
+    if (token) updateCartCount();
+  </script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: node-failure-engine
+  namespace: chaos
+spec:
+  engineState: "active"
+  chaosServiceAccount: litmus-admin
+  experiments:
+    - name: node-drain
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "120"
+            - name: NODE_LABEL
+              value: "kubernetes.io/role=worker"
+            - name: TARGET_NODE
+              value: ""
+            - name: DRAIN_TIMEOUT
+              value: "60"
+        probe:
+          - name: check-cluster-health
+            type: k8sProbe
+            k8sProbe/inputs:
+              command:
+                group: "coordination.k8s.io"
+                version: "v1"
+                resource: "leases"
+                operation: "list"
+            mode: Continuous
+            runProperties:
+              probeTimeout: 10s
+              interval: 10s
+---
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: node-cpu-stress
+  namespace: chaos
+spec:
+  engineState: "active"
+  chaosServiceAccount: litmus-admin
+  experiments:
+    - name: node-cpu-hog
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "60"
+            - name: CPU_CORES
+              value: "2"
+            - name: NODE_LABEL
+              value: "kubernetes.io/role=worker"
+        probe:
+          - name: check-cpu-recovery
+            type: promProbe
+            promProbe/inputs:
+              endpoint: http://prometheus-server.monitoring:80
+              query:
+                - query: "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[2m])) * 100)"
+                  criteria: "=="
+                  value: "nil"
+            mode: Edge
+            runProperties:
+              probeTimeout: 60s
+              interval: 10s
+              retry: 5

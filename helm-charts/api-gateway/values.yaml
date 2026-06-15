@@ -1,0 +1,36 @@
+replicaCount: 3
+
+image:
+  repository: zero-downtime/api-gateway
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8080
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 256Mi
+  requests:
+    cpu: 200m
+    memory: 128Mi
+
+env:
+  - name: USER_SERVICE_URL
+    value: "http://user-service:3001"
+  - name: PRODUCT_SERVICE_URL
+    value: "http://product-service:3002"
+  - name: ORDER_SERVICE_URL
+    value: "http://order-service:3003"
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+pdb:
+  enabled: true
+  minAvailable: 2

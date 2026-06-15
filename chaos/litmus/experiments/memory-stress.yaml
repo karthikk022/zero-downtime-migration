@@ -1,0 +1,76 @@
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: memory-stress-engine
+  namespace: chaos
+spec:
+  engineState: "active"
+  appinfo:
+    appns: "production"
+    applabel: "app=user-service"
+    appkind: "deployment"
+  chaosServiceAccount: litmus-admin
+  experiments:
+    - name: pod-memory-hog
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "60"
+            - name: MEMORY_CONSUMPTION
+              value: "80"
+            - name: MEMORY_PERCENTAGE
+              value: "80"
+            - name: TARGET_PODS
+              value: "1"
+        probe:
+          - name: check-recovery
+            type: k8sProbe
+            k8sProbe/inputs:
+              command:
+                group: "apps"
+                version: "v1"
+                resource: "deployments"
+                operation: "describe"
+                label: "app=user-service"
+            mode: Eavesdrop
+            runProperties:
+              probeTimeout: 30s
+              interval: 10s
+---
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: cpu-stress-engine
+  namespace: chaos
+spec:
+  engineState: "active"
+  appinfo:
+    appns: "production"
+    applabel: "app=product-service"
+    appkind: "deployment"
+  chaosServiceAccount: litmus-admin
+  experiments:
+    - name: pod-cpu-hog
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "60"
+            - name: CPU_CORES
+              value: "1"
+            - name: TARGET_PODS
+              value: "1"
+        probe:
+          - name: check-product-api
+            type: httpProbe
+            httpProbe/inputs:
+              url: http://product-service.production:3002/health
+              method:
+                get:
+                  criteria: "=="
+                  responseCode: "200"
+            mode: Continuous
+            runProperties:
+              probeTimeout: 5s
+              interval: 10s
