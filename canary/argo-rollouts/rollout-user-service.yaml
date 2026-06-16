@@ -1,0 +1,117 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: user-service-rollout
+  namespace: production
+spec:
+  replicas: 3
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+        - name: user-service
+          image: zero-downtime/user-service:latest
+          ports:
+            - containerPort: 3001
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            limits:
+              cpu: "300m"
+              memory: "256Mi"
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+  strategy:
+    canary:
+      maxSurge: "25%"
+      maxUnavailable: 0
+      steps:
+        - setWeight: 10
+        - pause:
+            duration: 3m
+        - setWeight: 25
+        - pause:
+            duration: 5m
+        - setWeight: 50
+        - pause:
+            duration: 5m
+        - setWeight: 75
+        - pause:
+            duration: 5m
+        - setWeight: 100
+      analysis:
+        templates:
+          - templateName: user-service-success-rate
+        startingStep: 1
+        args:
+          - name: service-name
+            value: user-service-canary
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: user-service-success-rate
+  namespace: production
+spec:
+  args:
+    - name: service-name
+  metrics:
+    - name: success-rate
+      count: 5
+      interval: 2m
+      successCondition: result[0] >= 0.95
+      failureLimit: 2
+      provider:
+        prometheus:
+          address: http://prometheus-server.monitoring:80
+          query: |
+            sum(rate(http_requests_total{service="{{args.service-name}}", status=~"2.."}[2m]))
+            /
+            sum(rate(http_requests_total{service="{{args.service-name}}"}[2m]))
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service-canary
+  namespace: production
+  labels:
+    app: user-service
+spec:
+  ports:
+    - port: 3001
+      targetPort: 3001
+      name: http
+  selector:
+    app: user-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service-stable
+  namespace: production
+  labels:
+    app: user-service
+spec:
+  ports:
+    - port: 3001
+      targetPort: 3001
+      name: http
+  selector:
+    app: user-service

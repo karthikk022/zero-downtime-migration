@@ -38,7 +38,7 @@ jobs:
         working-directory: microservices/${{ matrix.service }}
 
       - name: Run lint
-        run: npm run lint 2>/dev/null || true
+        run: npm run lint
         working-directory: microservices/${{ matrix.service }}
 
       - name: Run tests
@@ -63,9 +63,45 @@ jobs:
         with:
           sarif_file: trivy-results-${{ matrix.service }}.sarif
 
+  integration-tests:
+    name: Integration Tests
+    needs: build-and-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Start MySQL
+        run: |
+          docker compose -f docker-compose.integration.yml up -d --wait
+          sleep 10
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: microservices/order-service
+
+      - name: Run integration tests
+        run: npm test -- --testPathPattern=integration
+        working-directory: microservices/order-service
+        env:
+          DB_HOST_INTEGRATION: 127.0.0.1
+          DB_PORT_INTEGRATION: "3307"
+          DB_USER_INTEGRATION: ecommerce
+          DB_PASSWORD_INTEGRATION: ecommerce_pass
+          DB_NAME_INTEGRATION: ecommerce
+
+      - name: Cleanup
+        run: docker compose -f docker-compose.integration.yml down -v
+        if: always()
+
   push-images:
     name: Push Images
-    needs: build-and-test
+    needs: integration-tests
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
 
@@ -110,20 +146,34 @@ jobs:
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --name ${{ env.CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
 
-      - name: Deploy Argo Rollout
+      - name: Deploy Argo Rollouts
         run: |
-          kubectl apply -f canary/argo-rollouts/rollout.yaml
+          kubectl apply -f canary/argo-rollouts/
 
-      - name: Update image
+      - name: Update images
         run: |
           kubectl argo rollouts set image frontend-rollout \
             frontend=$ECR_REGISTRY/frontend:${{ github.sha }} \
             -n production
+          kubectl argo rollouts set image api-gateway-rollout \
+            api-gateway=$ECR_REGISTRY/api-gateway:${{ github.sha }} \
+            -n production
+          kubectl argo rollouts set image user-service-rollout \
+            user-service=$ECR_REGISTRY/user-service:${{ github.sha }} \
+            -n production
+          kubectl argo rollouts set image product-service-rollout \
+            product-service=$ECR_REGISTRY/product-service:${{ github.sha }} \
+            -n production
+          kubectl argo rollouts set image order-service-rollout \
+            order-service=$ECR_REGISTRY/order-service:${{ github.sha }} \
+            -n production
 
-      - name: Promote canary
+      - name: Promote canaries
         run: |
           sleep 60
-          kubectl argo rollouts promote frontend-rollout -n production
+          for rollout in frontend-rollout api-gateway-rollout user-service-rollout product-service-rollout order-service-rollout; do
+            kubectl argo rollouts promote "$rollout" -n production
+          done
 
   smoke-tests:
     name: Smoke Tests
@@ -148,8 +198,12 @@ jobs:
     steps:
       - name: Promote to 100%
         run: |
-          kubectl argo rollouts promote --full frontend-rollout -n production
+          for rollout in frontend-rollout api-gateway-rollout user-service-rollout product-service-rollout order-service-rollout; do
+            kubectl argo rollouts promote --full "$rollout" -n production
+          done
 
-      - name: Verify rollout
+      - name: Verify rollouts
         run: |
-          kubectl argo rollouts status frontend-rollout -n production --watch
+          for rollout in frontend-rollout api-gateway-rollout user-service-rollout product-service-rollout order-service-rollout; do
+            kubectl argo rollouts status "$rollout" -n production --watch
+          done
