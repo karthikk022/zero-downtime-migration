@@ -27,6 +27,28 @@ export TF_VAR_db_password="ChangeMe123!"
 # Deploy infrastructure
 terraform plan -out=tfplan
 terraform apply tfplan
+
+# Note the outputs: state_bucket and dynamodb_table
+# These are used for remote state backend in production.
+```
+
+## Step 1b: Migrate to Remote State (Production)
+
+After the first apply, migrate from local to S3 backend:
+
+```bash
+# Edit terraform/main.tf: replace backend "local" with:
+#   backend "s3" {
+#     bucket         = "zero-downtime-prod-tfstate"
+#     key            = "prod/terraform.tfstate"
+#     region         = "us-east-1"
+#     encrypt        = true
+#     dynamodb_table = "zero-downtime-prod-tfstate-lock"
+#   }
+
+# Migrate state
+cd terraform/environments/prod
+terraform init -migrate-state
 ```
 
 ## Step 2: Configure kubectl

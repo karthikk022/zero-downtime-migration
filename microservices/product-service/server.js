@@ -46,19 +46,6 @@ app.get("/", async (req, res) => {
   }
 });
 
-app.get("/:id", async (req, res) => {
-  try {
-    const [products] = await pool.query(
-      "SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.id = ? AND p.is_active = TRUE",
-      [req.params.id]
-    );
-    if (products.length === 0) return res.status(404).json({ error: "Not found" });
-    res.json(products[0]);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 app.get("/categories/list", async (req, res) => {
   try {
     const [categories] = await pool.query("SELECT * FROM categories ORDER BY name");
@@ -74,6 +61,19 @@ app.get("/health", async (req, res) => {
     res.json({ status: "healthy", service: "product-service" });
   } catch (err) {
     res.status(503).json({ status: "unhealthy", error: err.message });
+  }
+});
+
+app.get("/:id", async (req, res) => {
+  try {
+    const [products] = await pool.query(
+      "SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.id = ? AND p.is_active = TRUE",
+      [req.params.id]
+    );
+    if (products.length === 0) return res.status(404).json({ error: "Not found" });
+    res.json(products[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

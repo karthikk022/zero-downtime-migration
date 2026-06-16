@@ -67,27 +67,29 @@ app.use((req, res) => {
 
 app.use(errorHandler);
 
-const server = app.listen(PORT, "0.0.0.0", () => {
-  logger.info(`Monolith e-commerce app running on port ${PORT}`);
-  logger.info(`Health check: http://localhost:${PORT}/health`);
-});
-
-process.on("SIGTERM", async () => {
-  logger.info("SIGTERM received. Shutting down gracefully...");
-  server.close(async () => {
-    await pool.end();
-    logger.info("Server and DB connections closed.");
-    process.exit(0);
+if (require.main === module) {
+  const server = app.listen(PORT, "0.0.0.0", () => {
+    logger.info(`Monolith e-commerce app running on port ${PORT}`);
+    logger.info(`Health check: http://localhost:${PORT}/health`);
   });
-});
 
-process.on("SIGINT", async () => {
-  logger.info("SIGINT received. Shutting down gracefully...");
-  server.close(async () => {
-    await pool.end();
-    logger.info("Server and DB connections closed.");
-    process.exit(0);
+  process.on("SIGTERM", async () => {
+    logger.info("SIGTERM received. Shutting down gracefully...");
+    server.close(async () => {
+      await pool.end();
+      logger.info("Server and DB connections closed.");
+      process.exit(0);
+    });
   });
-});
+
+  process.on("SIGINT", async () => {
+    logger.info("SIGINT received. Shutting down gracefully...");
+    server.close(async () => {
+      await pool.end();
+      logger.info("Server and DB connections closed.");
+      process.exit(0);
+    });
+  });
+}
 
 module.exports = app;

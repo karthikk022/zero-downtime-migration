@@ -26,12 +26,13 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    try {
-      req.user = jwt.verify(authHeader.split(" ")[1], JWT_SECRET);
-    } catch (err) {
-      return res.status(401).json({ error: "Invalid token" });
-    }
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Missing token" });
+  }
+  try {
+    req.user = jwt.verify(authHeader.split(" ")[1], JWT_SECRET);
+  } catch (err) {
+    return res.status(401).json({ error: "Invalid token" });
   }
   next();
 };

@@ -10,6 +10,10 @@ terraform {
       version = "~> 3.5"
     }
   }
+  # Step 1: Apply with local backend to create S3 bucket + DynamoDB table.
+  # Step 2: Replace with backend "s3" using outputs from step 1.
+  # Step 3: Run 'terraform init -migrate-state' to migrate state to S3.
+  # See docs/deployment-guide.md for full instructions.
   backend "local" {
     path = "environments/minimal/terraform.tfstate"
   }
